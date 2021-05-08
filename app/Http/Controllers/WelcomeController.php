@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use alchemyguy\YoutubeLaravelApi\AuthenticateService;	
-use  alchemyguy\YoutubeLaravelApi\ChannelService;
+use alchemyguy\YoutubeLaravelApi\ChannelService;
+use alchemyguy\YoutubeLaravelApi\VideoService;
 
 class WelcomeController extends Controller
 {
@@ -36,13 +37,29 @@ class WelcomeController extends Controller
 
         // dd($authResponse);
 
-        $part = 'id,snippet,statistics';
+        $partVideo ='snippet,id';
+        $paramsVideo =array('channelId' => 'UCY47kwwJXNRYcen0zGORKsA');
+        $videoServiceObject  = new VideoService;
+        $response = $videoServiceObject->searchListByKeyword($partVideo, $paramsVideo);
+
+        $videos = [];
+        array_shift($response->items);
+        // dd($response);
+        foreach($response->items as $item) {
+            $videos[] = array(
+                'videoUrl'      => 'https://www.youtube.com/watch?v='.$item->id->videoId,
+                'thumbnail'     => $item->snippet->thumbnails->high->url,
+                'title'         => $item->snippet->title,
+                'publishedAt'   => $item->snippet->publishedAt
+            );
+        }
+        // dd($videos);
+
+        $part = 'id,snippet,statistics,contentDetails';
         $params = array('id' => 'UCY47kwwJXNRYcen0zGORKsA');
         $channelServiceObject  = new ChannelService;
         $channelDetails = $channelServiceObject->channelsListById($part, $params);
-        // $response = $channelServiceObject->addSubscriptions($properties, $token, $part='snippet', $params=[]);
         // dd($channelDetails);
-        // dd($channelDetails->items[0]->snippet->thumbnails->medium->url);
 
         $channelName    = $channelDetails->items[0]->snippet->title;
         $thumbnail      = $channelDetails->items[0]->snippet->thumbnails->medium->url;
@@ -55,7 +72,8 @@ class WelcomeController extends Controller
             'channelName', 
             'subscribers', 
             'totalVideos', 
-            'totalViews'
+            'totalViews',
+            'videos'
         ));
     }
 }
